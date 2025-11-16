@@ -1,0 +1,906 @@
+auto lo
+iface lo inet loopback
+
+iface enp2s0 inet manual
+
+auto vmbr0
+iface vmbr0 inet static
+	address 192.168.1.49/24
+	gateway 192.168.1.254
+	bridge-ports enp2s0
+	bridge-stp off
+	bridge-fd 0
+
+# Bridge per le VM (con NAT)
+auto vmbr1
+iface vmbr1 inet static
+    address 192.168.100.1/24
+    netmask 255.255.255.0
+    bridge-ports none
+    bridge-stp off
+    bridge-fd 0
+
+    # Abilita il forwarding e NAT
+    post-up echo 1 > /proc/sys/net/ipv4/ip_forward
+    post-up iptables -t nat -A POSTROUTING -s '192.168.100.0/24' -o vmbr0 -j MASQUERADE
+    post-down iptables -t nat -D POSTROUTING -s '192.168.100.0/24' -o vmbr0 -j MASQUERADE
+
+
+#IPTABLES 101
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26204:26206 -j DNAT --to-destination 192.168.100.101
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22864:22866 -j DNAT --to-destination 192.168.100.101 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36531:36536 -j DNAT --to-destination 192.168.100.101 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39070:39075 -j DNAT --to-destination 192.168.100.101
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.101 -p tcp --dport 26204:26206 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.101 -p tcp --dport 22864:22866 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.101 -p tcp --dport 36531:36536 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.101 -p udp --dport 39070:39075 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26204:26206 -j DNAT --to-destination 192.168.100.101
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22864:22866 -j DNAT --to-destination 192.168.100.101 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36531:36536 -j DNAT --to-destination 192.168.100.101 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39070:39075 -j DNAT --to-destination 192.168.100.101
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.101 -p tcp --dport 26204:26206 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.101 -p tcp --dport 22864:22866 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.101 -p tcp --dport 36531:36536 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.101 -p udp --dport 39070:39075 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 102
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26207:26209 -j DNAT --to-destination 192.168.100.102
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22867:22869 -j DNAT --to-destination 192.168.100.102 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36537:36542 -j DNAT --to-destination 192.168.100.102 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39076:39081 -j DNAT --to-destination 192.168.100.102
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.102 -p tcp --dport 26207:26209 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.102 -p tcp --dport 22867:22869 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.102 -p tcp --dport 36537:36542 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.102 -p udp --dport 39076:39081 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26207:26209 -j DNAT --to-destination 192.168.100.102
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22867:22869 -j DNAT --to-destination 192.168.100.102 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36537:36542 -j DNAT --to-destination 192.168.100.102 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39076:39081 -j DNAT --to-destination 192.168.100.102
+
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.102 -p tcp --dport 26207:26209 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.102 -p tcp --dport 22867:22869 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.102 -p tcp --dport 36537:36542 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.102 -p udp --dport 39076:39081 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 103
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26210:26212 -j DNAT --to-destination 192.168.100.103
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22870:22872 -j DNAT --to-destination 192.168.100.103 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36543:36548 -j DNAT --to-destination 192.168.100.103 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39082:39087 -j DNAT --to-destination 192.168.100.103
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.103 -p tcp --dport 26210:26212 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.103 -p tcp --dport 22870:22872 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.103 -p tcp --dport 36543:36548 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.103 -p udp --dport 39082:39087 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26210:26212 -j DNAT --to-destination 192.168.100.103
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22870:22872 -j DNAT --to-destination 192.168.100.103 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36543:36548 -j DNAT --to-destination 192.168.100.103 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39082:39087 -j DNAT --to-destination 192.168.100.103
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.103 -p tcp --dport 26210:26212 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.103 -p tcp --dport 22870:22872 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.103 -p tcp --dport 36543:36548 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.103 -p udp --dport 39082:39087 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 104
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26213:26215 -j DNAT --to-destination 192.168.100.104
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22873:22875 -j DNAT --to-destination 192.168.100.104 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36549:36554 -j DNAT --to-destination 192.168.100.104 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39088:39093 -j DNAT --to-destination 192.168.100.104
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.104 -p tcp --dport 26213:26215 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.104 -p tcp --dport 22873:22875 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.104 -p tcp --dport 36549:36554 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.104 -p udp --dport 39088:39093 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26213:26215 -j DNAT --to-destination 192.168.100.104
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22873:22875 -j DNAT --to-destination 192.168.100.104 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36549:36554 -j DNAT --to-destination 192.168.100.104 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39088:39093 -j DNAT --to-destination 192.168.100.104
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.104 -p tcp --dport 26213:26215 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.104 -p tcp --dport 22873:22875 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.104 -p tcp --dport 36549:36554 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.104 -p udp --dport 39088:39093 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 105
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26216:26218 -j DNAT --to-destination 192.168.100.105
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22876:22878 -j DNAT --to-destination 192.168.100.105 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36555:36560 -j DNAT --to-destination 192.168.100.105 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39094:39099 -j DNAT --to-destination 192.168.100.105
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.105 -p tcp --dport 26216:26218 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.105 -p tcp --dport 22876:22878 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.105 -p tcp --dport 36555:36560 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.105 -p udp --dport 39094:39099 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26216:26218 -j DNAT --to-destination 192.168.100.105
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22876:22878 -j DNAT --to-destination 192.168.100.105 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36555:36560 -j DNAT --to-destination 192.168.100.105 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39094:39099 -j DNAT --to-destination 192.168.100.105
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.105 -p tcp --dport 26216:26218 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.105 -p tcp --dport 22876:22878 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.105 -p tcp --dport 36555:36560 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.105 -p udp --dport 39094:39099 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 106
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26219:26221 -j DNAT --to-destination 192.168.100.106
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22879:22881 -j DNAT --to-destination 192.168.100.106 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36561:36566 -j DNAT --to-destination 192.168.100.106 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39100:39105 -j DNAT --to-destination 192.168.100.106
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.106 -p tcp --dport 26219:26221 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.106 -p tcp --dport 22879:22881 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.106 -p tcp --dport 36561:36566 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.106 -p udp --dport 39100:39105 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26219:26221 -j DNAT --to-destination 192.168.100.106
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22879:22881 -j DNAT --to-destination 192.168.100.106 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36561:36566 -j DNAT --to-destination 192.168.100.106 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39100:39105 -j DNAT --to-destination 192.168.100.106
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.106 -p tcp --dport 26219:26221 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.106 -p tcp --dport 22879:22881 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.106 -p tcp --dport 36561:36566 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.106 -p udp --dport 39100:39105 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 107
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26222:26224 -j DNAT --to-destination 192.168.100.107
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22882:22884 -j DNAT --to-destination 192.168.100.107 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36567:36572 -j DNAT --to-destination 192.168.100.107 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39106:39111 -j DNAT --to-destination 192.168.100.107
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.107 -p tcp --dport 26222:26224 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.107 -p tcp --dport 22882:22884 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.107 -p tcp --dport 36567:36572 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.107 -p udp --dport 39106:39111 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26222:26224 -j DNAT --to-destination 192.168.100.107
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22882:22884 -j DNAT --to-destination 192.168.100.107 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36567:36572 -j DNAT --to-destination 192.168.100.107 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39106:39111 -j DNAT --to-destination 192.168.100.107
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.107 -p tcp --dport 26222:26224 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.107 -p tcp --dport 22882:22884 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.107 -p tcp --dport 36567:36572 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.107 -p udp --dport 39106:39111 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 108
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26225:26227 -j DNAT --to-destination 192.168.100.108
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22885:22887 -j DNAT --to-destination 192.168.100.108 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36573:36578 -j DNAT --to-destination 192.168.100.108 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39112:39117 -j DNAT --to-destination 192.168.100.108
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.108 -p tcp --dport 26225:26227 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.108 -p tcp --dport 22885:22887 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.108 -p tcp --dport 36573:36578 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.108 -p udp --dport 39112:39117 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26225:26227 -j DNAT --to-destination 192.168.100.108
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22885:22887 -j DNAT --to-destination 192.168.100.108 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36573:36578 -j DNAT --to-destination 192.168.100.108 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39112:39117 -j DNAT --to-destination 192.168.100.108
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.108 -p tcp --dport 26225:26227 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.108 -p tcp --dport 22885:22887 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.108 -p tcp --dport 36573:36578 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.108 -p udp --dport 39112:39117 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 109
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26228:26230 -j DNAT --to-destination 192.168.100.109
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22888:22890 -j DNAT --to-destination 192.168.100.109 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36579:36584 -j DNAT --to-destination 192.168.100.109 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39118:39123 -j DNAT --to-destination 192.168.100.109
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.109 -p tcp --dport 26228:26230 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.109 -p tcp --dport 22888:22890 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.109 -p tcp --dport 36579:36584 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.109 -p udp --dport 39118:39123 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26228:26230 -j DNAT --to-destination 192.168.100.109
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22888:22890 -j DNAT --to-destination 192.168.100.109 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36579:36584 -j DNAT --to-destination 192.168.100.109 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39118:39123 -j DNAT --to-destination 192.168.100.109
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.109 -p tcp --dport 26228:26230 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.109 -p tcp --dport 22888:22890 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.109 -p tcp --dport 36579:36584 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.109 -p udp --dport 39118:39123 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 110
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26231:26233 -j DNAT --to-destination 192.168.100.110
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22891:22893 -j DNAT --to-destination 192.168.100.110 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36585:36590 -j DNAT --to-destination 192.168.100.110 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39124:39129 -j DNAT --to-destination 192.168.100.110
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.110 -p tcp --dport 26231:26233 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.110 -p tcp --dport 22891:22893 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.110 -p tcp --dport 36585:36590 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.110 -p udp --dport 39124:39129 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26231:26233 -j DNAT --to-destination 192.168.100.110
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22891:22893 -j DNAT --to-destination 192.168.100.110 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36585:36590 -j DNAT --to-destination 192.168.100.110 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39124:39129 -j DNAT --to-destination 192.168.100.110
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.110 -p tcp --dport 26231:26233 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.110 -p tcp --dport 22891:22893 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.110 -p tcp --dport 36585:36590 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.110 -p udp --dport 39124:39129 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 111
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26234:26236 -j DNAT --to-destination 192.168.100.111
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22894:22896 -j DNAT --to-destination 192.168.100.111 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36591:36596 -j DNAT --to-destination 192.168.100.111 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39130:39135 -j DNAT --to-destination 192.168.100.111
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.111 -p tcp --dport 26234:26236 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.111 -p tcp --dport 22894:22896 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.111 -p tcp --dport 36591:36596 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.111 -p udp --dport 39130:39135 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26234:26236 -j DNAT --to-destination 192.168.100.111
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22894:22896 -j DNAT --to-destination 192.168.100.111 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36591:36596 -j DNAT --to-destination 192.168.100.111 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39130:39135 -j DNAT --to-destination 192.168.100.111
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.111 -p tcp --dport 26234:26236 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.111 -p tcp --dport 22894:22896 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.111 -p tcp --dport 36591:36596 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.111 -p udp --dport 39130:39135 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 112
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26237:26239 -j DNAT --to-destination 192.168.100.112
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22897:22899 -j DNAT --to-destination 192.168.100.112 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36597:36602 -j DNAT --to-destination 192.168.100.112 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39136:39141 -j DNAT --to-destination 192.168.100.112
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.112 -p tcp --dport 26237:26239 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.112 -p tcp --dport 22897:22899 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.112 -p tcp --dport 36597:36602 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.112 -p udp --dport 39136:39141 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26237:26239 -j DNAT --to-destination 192.168.100.112
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22897:22899 -j DNAT --to-destination 192.168.100.112 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36597:36602 -j DNAT --to-destination 192.168.100.112 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39136:39141 -j DNAT --to-destination 192.168.100.112
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.112 -p tcp --dport 26237:26239 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.112 -p tcp --dport 22897:22899 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.112 -p tcp --dport 36597:36602 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.112 -p udp --dport 39136:39141 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 113
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26240:26242 -j DNAT --to-destination 192.168.100.113
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22900:22902 -j DNAT --to-destination 192.168.100.113 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36603:36608 -j DNAT --to-destination 192.168.100.113 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39142:39147 -j DNAT --to-destination 192.168.100.113
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.113 -p tcp --dport 26240:26242 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.113 -p tcp --dport 22900:22902 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.113 -p tcp --dport 36603:36608 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.113 -p udp --dport 39142:39147 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26240:26242 -j DNAT --to-destination 192.168.100.113
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22900:22902 -j DNAT --to-destination 192.168.100.113 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36603:36608 -j DNAT --to-destination 192.168.100.113 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39142:39147 -j DNAT --to-destination 192.168.100.113
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.113 -p tcp --dport 26240:26242 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.113 -p tcp --dport 22900:22902 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.113 -p tcp --dport 36603:36608 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.113 -p udp --dport 39142:39147 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 114
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26243:26245 -j DNAT --to-destination 192.168.100.114
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22903:22905 -j DNAT --to-destination 192.168.100.114 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36609:36614 -j DNAT --to-destination 192.168.100.114 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39148:39153 -j DNAT --to-destination 192.168.100.114
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.114 -p tcp --dport 26243:26245 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.114 -p tcp --dport 22903:22905 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.114 -p tcp --dport 36609:36614 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.114 -p udp --dport 39148:39153 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26243:26245 -j DNAT --to-destination 192.168.100.114
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22903:22905 -j DNAT --to-destination 192.168.100.114 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36609:36614 -j DNAT --to-destination 192.168.100.114 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39148:39153 -j DNAT --to-destination 192.168.100.114
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.114 -p tcp --dport 26243:26245 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.114 -p tcp --dport 22903:22905 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.114 -p tcp --dport 36609:36614 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.114 -p udp --dport 39148:39153 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 115
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26246:26248 -j DNAT --to-destination 192.168.100.115
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22906:22908 -j DNAT --to-destination 192.168.100.115 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36615:36620 -j DNAT --to-destination 192.168.100.115 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39154:39159 -j DNAT --to-destination 192.168.100.115
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.115 -p tcp --dport 26246:26248 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.115 -p tcp --dport 22906:22908 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.115 -p tcp --dport 36615:36620 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.115 -p udp --dport 39154:39159 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26246:26248 -j DNAT --to-destination 192.168.100.115
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22906:22908 -j DNAT --to-destination 192.168.100.115 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36615:36620 -j DNAT --to-destination 192.168.100.115 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39154:39159 -j DNAT --to-destination 192.168.100.115
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.115 -p tcp --dport 26246:26248 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.115 -p tcp --dport 22906:22908 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.115 -p tcp --dport 36615:36620 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.115 -p udp --dport 39154:39159 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 116
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26249:26251 -j DNAT --to-destination 192.168.100.116
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22909:22911 -j DNAT --to-destination 192.168.100.116 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36621:36626 -j DNAT --to-destination 192.168.100.116 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39160:39165 -j DNAT --to-destination 192.168.100.116
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.116 -p tcp --dport 26249:26251 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.116 -p tcp --dport 22909:22911 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.116 -p tcp --dport 36621:36626 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.116 -p udp --dport 39160:39165 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26249:26251 -j DNAT --to-destination 192.168.100.116
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22909:22911 -j DNAT --to-destination 192.168.100.116 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36621:36626 -j DNAT --to-destination 192.168.100.116 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39160:39165 -j DNAT --to-destination 192.168.100.116
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.116 -p tcp --dport 26249:26251 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.116 -p tcp --dport 22909:22911 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.116 -p tcp --dport 36621:36626 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.116 -p udp --dport 39160:39165 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 117
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26252:26254 -j DNAT --to-destination 192.168.100.117
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22912:22914 -j DNAT --to-destination 192.168.100.117 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36627:36632 -j DNAT --to-destination 192.168.100.117 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39166:39171 -j DNAT --to-destination 192.168.100.117
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.117 -p tcp --dport 26252:26254 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.117 -p tcp --dport 22912:22914 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.117 -p tcp --dport 36627:36632 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.117 -p udp --dport 39166:39171 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26252:26254 -j DNAT --to-destination 192.168.100.117
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22912:22914 -j DNAT --to-destination 192.168.100.117 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36627:36632 -j DNAT --to-destination 192.168.100.117 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39166:39171 -j DNAT --to-destination 192.168.100.117
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.117 -p tcp --dport 26252:26254 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.117 -p tcp --dport 22912:22914 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.117 -p tcp --dport 36627:36632 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.117 -p udp --dport 39166:39171 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 118
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26255:26257 -j DNAT --to-destination 192.168.100.118
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22915:22917 -j DNAT --to-destination 192.168.100.118 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36633:36638 -j DNAT --to-destination 192.168.100.118 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39172:39177 -j DNAT --to-destination 192.168.100.118
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.118 -p tcp --dport 26255:26257 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.118 -p tcp --dport 22915:22917 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.118 -p tcp --dport 36633:36638 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.118 -p udp --dport 39172:39177 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26255:26257 -j DNAT --to-destination 192.168.100.118
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22915:22917 -j DNAT --to-destination 192.168.100.118 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36633:36638 -j DNAT --to-destination 192.168.100.118 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39172:39177 -j DNAT --to-destination 192.168.100.118
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.118 -p tcp --dport 26255:26257 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.118 -p tcp --dport 22915:22917 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.118 -p tcp --dport 36633:36638 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.118 -p udp --dport 39172:39177 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 119
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26258:26260 -j DNAT --to-destination 192.168.100.119
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22918:22920 -j DNAT --to-destination 192.168.100.119 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36639:36644 -j DNAT --to-destination 192.168.100.119 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39178:39183 -j DNAT --to-destination 192.168.100.119
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.119 -p tcp --dport 26258:26260 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.119 -p tcp --dport 22918:22920 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.119 -p tcp --dport 36639:36644 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.119 -p udp --dport 39178:39183 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26258:26260 -j DNAT --to-destination 192.168.100.119
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22918:22920 -j DNAT --to-destination 192.168.100.119 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36639:36644 -j DNAT --to-destination 192.168.100.119 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39178:39183 -j DNAT --to-destination 192.168.100.119
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.119 -p tcp --dport 26258:26260 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.119 -p tcp --dport 22918:22920 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.119 -p tcp --dport 36639:36644 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.119 -p udp --dport 39178:39183 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 120
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26261:26263 -j DNAT --to-destination 192.168.100.120
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22921:22923 -j DNAT --to-destination 192.168.100.120 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36645:36650 -j DNAT --to-destination 192.168.100.120 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39184:39189 -j DNAT --to-destination 192.168.100.120
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.120 -p tcp --dport 26261:26263 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.120 -p tcp --dport 22921:22923 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.120 -p tcp --dport 36645:36650 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.120 -p udp --dport 39184:39189 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26261:26263 -j DNAT --to-destination 192.168.100.120
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22921:22923 -j DNAT --to-destination 192.168.100.120 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36645:36650 -j DNAT --to-destination 192.168.100.120 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39184:39189 -j DNAT --to-destination 192.168.100.120
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.120 -p tcp --dport 26261:26263 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.120 -p tcp --dport 22921:22923 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.120 -p tcp --dport 36645:36650 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.120 -p udp --dport 39184:39189 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 121
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26264:26266 -j DNAT --to-destination 192.168.100.121
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22924:22926 -j DNAT --to-destination 192.168.100.121 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36651:36656 -j DNAT --to-destination 192.168.100.121 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39190:39195 -j DNAT --to-destination 192.168.100.121
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.121 -p tcp --dport 26264:26266 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.121 -p tcp --dport 22924:22926 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.121 -p tcp --dport 36651:36656 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.121 -p udp --dport 39190:39195 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26264:26266 -j DNAT --to-destination 192.168.100.121
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22924:22926 -j DNAT --to-destination 192.168.100.121 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36651:36656 -j DNAT --to-destination 192.168.100.121 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39190:39195 -j DNAT --to-destination 192.168.100.121
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.121 -p tcp --dport 26264:26266 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.121 -p tcp --dport 22924:22926 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.121 -p tcp --dport 36651:36656 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.121 -p udp --dport 39190:39195 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 122
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26267:26269 -j DNAT --to-destination 192.168.100.122
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22927:22929 -j DNAT --to-destination 192.168.100.122 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36657:36662 -j DNAT --to-destination 192.168.100.122 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39196:39201 -j DNAT --to-destination 192.168.100.122
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.122 -p tcp --dport 26267:26269 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.122 -p tcp --dport 22927:22929 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.122 -p tcp --dport 36657:36662 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.122 -p udp --dport 39196:39201 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26267:26269 -j DNAT --to-destination 192.168.100.122
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22927:22929 -j DNAT --to-destination 192.168.100.122 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36657:36662 -j DNAT --to-destination 192.168.100.122 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39196:39201 -j DNAT --to-destination 192.168.100.122
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.122 -p tcp --dport 26267:26269 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.122 -p tcp --dport 22927:22929 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.122 -p tcp --dport 36657:36662 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.122 -p udp --dport 39196:39201 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 123
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26270:26272 -j DNAT --to-destination 192.168.100.123
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22930:22932 -j DNAT --to-destination 192.168.100.123 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36663:36668 -j DNAT --to-destination 192.168.100.123 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39202:39207 -j DNAT --to-destination 192.168.100.123
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.123 -p tcp --dport 26270:26272 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.123 -p tcp --dport 22930:22932 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.123 -p tcp --dport 36663:36668 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.123 -p udp --dport 39202:39207 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26270:26272 -j DNAT --to-destination 192.168.100.123
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22930:22932 -j DNAT --to-destination 192.168.100.123 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36663:36668 -j DNAT --to-destination 192.168.100.123 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39202:39207 -j DNAT --to-destination 192.168.100.123
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.123 -p tcp --dport 26270:26272 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.123 -p tcp --dport 22930:22932 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.123 -p tcp --dport 36663:36668 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.123 -p udp --dport 39202:39207 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 124
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26273:26275 -j DNAT --to-destination 192.168.100.124
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22933:22935 -j DNAT --to-destination 192.168.100.124 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36669:36674 -j DNAT --to-destination 192.168.100.124 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39208:39213 -j DNAT --to-destination 192.168.100.124
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.124 -p tcp --dport 26273:26275 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.124 -p tcp --dport 22933:22935 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.124 -p tcp --dport 36669:36674 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.124 -p udp --dport 39208:39213 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26273:26275 -j DNAT --to-destination 192.168.100.124
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22933:22935 -j DNAT --to-destination 192.168.100.124 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36669:36674 -j DNAT --to-destination 192.168.100.124 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39208:39213 -j DNAT --to-destination 192.168.100.124
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.124 -p tcp --dport 26273:26275 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.124 -p tcp --dport 22933:22935 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.124 -p tcp --dport 36669:36674 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.124 -p udp --dport 39208:39213 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 125
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26276:26278 -j DNAT --to-destination 192.168.100.125
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22936:22938 -j DNAT --to-destination 192.168.100.125 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36675:36680 -j DNAT --to-destination 192.168.100.125 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39214:39219 -j DNAT --to-destination 192.168.100.125
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.125 -p tcp --dport 26276:26278 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.125 -p tcp --dport 22936:22938 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.125 -p tcp --dport 36675:36680 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.125 -p udp --dport 39214:39219 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26276:26278 -j DNAT --to-destination 192.168.100.125
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22936:22938 -j DNAT --to-destination 192.168.100.125 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36675:36680 -j DNAT --to-destination 192.168.100.125 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39214:39219 -j DNAT --to-destination 192.168.100.125
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.125 -p tcp --dport 26276:26278 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.125 -p tcp --dport 22936:22938 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.125 -p tcp --dport 36675:36680 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.125 -p udp --dport 39214:39219 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 126
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26279:26281 -j DNAT --to-destination 192.168.100.126
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22939:22941 -j DNAT --to-destination 192.168.100.126 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36681:36686 -j DNAT --to-destination 192.168.100.126 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39220:39225 -j DNAT --to-destination 192.168.100.126
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.126 -p tcp --dport 26279:26281 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.126 -p tcp --dport 22939:22941 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.126 -p tcp --dport 36681:36686 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.126 -p udp --dport 39220:39225 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26279:26281 -j DNAT --to-destination 192.168.100.126
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22939:22941 -j DNAT --to-destination 192.168.100.126 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36681:36686 -j DNAT --to-destination 192.168.100.126 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39220:39225 -j DNAT --to-destination 192.168.100.126
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.126 -p tcp --dport 26279:26281 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.126 -p tcp --dport 22939:22941 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.126 -p tcp --dport 36681:36686 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.126 -p udp --dport 39220:39225 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 127
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26282:26284 -j DNAT --to-destination 192.168.100.127
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22942:22944 -j DNAT --to-destination 192.168.100.127 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36687:36692 -j DNAT --to-destination 192.168.100.127 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39226:39231 -j DNAT --to-destination 192.168.100.127
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.127 -p tcp --dport 26282:26284 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.127 -p tcp --dport 22942:22944 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.127 -p tcp --dport 36687:36692 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.127 -p udp --dport 39226:39231 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26282:26284 -j DNAT --to-destination 192.168.100.127
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22942:22944 -j DNAT --to-destination 192.168.100.127 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36687:36692 -j DNAT --to-destination 192.168.100.127 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39226:39231 -j DNAT --to-destination 192.168.100.127
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.127 -p tcp --dport 26282:26284 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.127 -p tcp --dport 22942:22944 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.127 -p tcp --dport 36687:36692 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.127 -p udp --dport 39226:39231 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 128
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26285:26287 -j DNAT --to-destination 192.168.100.128
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22945:22947 -j DNAT --to-destination 192.168.100.128 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36693:36698 -j DNAT --to-destination 192.168.100.128 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39232:39237 -j DNAT --to-destination 192.168.100.128
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.128 -p tcp --dport 26285:26287 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.128 -p tcp --dport 22945:22947 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.128 -p tcp --dport 36693:36698 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.128 -p udp --dport 39232:39237 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26285:26287 -j DNAT --to-destination 192.168.100.128
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22945:22947 -j DNAT --to-destination 192.168.100.128 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36693:36698 -j DNAT --to-destination 192.168.100.128 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39232:39237 -j DNAT --to-destination 192.168.100.128
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.128 -p tcp --dport 26285:26287 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.128 -p tcp --dport 22945:22947 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.128 -p tcp --dport 36693:36698 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.128 -p udp --dport 39232:39237 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 129
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26288:26290 -j DNAT --to-destination 192.168.100.129
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22948:22950 -j DNAT --to-destination 192.168.100.129 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36699:36704 -j DNAT --to-destination 192.168.100.129 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39238:39243 -j DNAT --to-destination 192.168.100.129
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.129 -p tcp --dport 26288:26290 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.129 -p tcp --dport 22948:22950 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.129 -p tcp --dport 36699:36704 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.129 -p udp --dport 39238:39243 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26288:26290 -j DNAT --to-destination 192.168.100.129
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22948:22950 -j DNAT --to-destination 192.168.100.129 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36699:36704 -j DNAT --to-destination 192.168.100.129 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39238:39243 -j DNAT --to-destination 192.168.100.129
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.129 -p tcp --dport 26288:26290 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.129 -p tcp --dport 22948:22950 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.129 -p tcp --dport 36699:36704 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.129 -p udp --dport 39238:39243 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 130
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26291:26293 -j DNAT --to-destination 192.168.100.130
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22951:22953 -j DNAT --to-destination 192.168.100.130 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36705:36710 -j DNAT --to-destination 192.168.100.130 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39244:39249 -j DNAT --to-destination 192.168.100.130
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.130 -p tcp --dport 26291:26293 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.130 -p tcp --dport 22951:22953 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.130 -p tcp --dport 36705:36710 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.130 -p udp --dport 39244:39249 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26291:26293 -j DNAT --to-destination 192.168.100.130
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22951:22953 -j DNAT --to-destination 192.168.100.130 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36705:36710 -j DNAT --to-destination 192.168.100.130 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39244:39249 -j DNAT --to-destination 192.168.100.130
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.130 -p tcp --dport 26291:26293 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.130 -p tcp --dport 22951:22953 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.130 -p tcp --dport 36705:36710 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.130 -p udp --dport 39244:39249 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 131
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26294:26296 -j DNAT --to-destination 192.168.100.131
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22954:22956 -j DNAT --to-destination 192.168.100.131 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36711:36716 -j DNAT --to-destination 192.168.100.131 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39250:39255 -j DNAT --to-destination 192.168.100.131
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.131 -p tcp --dport 26294:26296 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.131 -p tcp --dport 22954:22956 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.131 -p tcp --dport 36711:36716 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.131 -p udp --dport 39250:39255 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26294:26296 -j DNAT --to-destination 192.168.100.131
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22954:22956 -j DNAT --to-destination 192.168.100.131 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36711:36716 -j DNAT --to-destination 192.168.100.131 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39250:39255 -j DNAT --to-destination 192.168.100.131
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.131 -p tcp --dport 26294:26296 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.131 -p tcp --dport 22954:22956 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.131 -p tcp --dport 36711:36716 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.131 -p udp --dport 39250:39255 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 132
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26297:26299 -j DNAT --to-destination 192.168.100.132
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22957:22959 -j DNAT --to-destination 192.168.100.132 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36717:36722 -j DNAT --to-destination 192.168.100.132 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39256:39261 -j DNAT --to-destination 192.168.100.132
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.132 -p tcp --dport 26297:26299 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.132 -p tcp --dport 22957:22959 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.132 -p tcp --dport 36717:36722 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.132 -p udp --dport 39256:39261 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26297:26299 -j DNAT --to-destination 192.168.100.132
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22957:22959 -j DNAT --to-destination 192.168.100.132 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36717:36722 -j DNAT --to-destination 192.168.100.132 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39256:39261 -j DNAT --to-destination 192.168.100.132
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.132 -p tcp --dport 26297:26299 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.132 -p tcp --dport 22957:22959 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.132 -p tcp --dport 36717:36722 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.132 -p udp --dport 39256:39261 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 133
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26300:26302 -j DNAT --to-destination 192.168.100.133
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22960:22962 -j DNAT --to-destination 192.168.100.133 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36723:36728 -j DNAT --to-destination 192.168.100.133 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39262:39267 -j DNAT --to-destination 192.168.100.133
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.133 -p tcp --dport 26300:26302 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.133 -p tcp --dport 22960:22962 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.133 -p tcp --dport 36723:36728 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.133 -p udp --dport 39262:39267 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26300:26302 -j DNAT --to-destination 192.168.100.133
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22960:22962 -j DNAT --to-destination 192.168.100.133 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36723:36728 -j DNAT --to-destination 192.168.100.133 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39262:39267 -j DNAT --to-destination 192.168.100.133
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.133 -p tcp --dport 26300:26302 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.133 -p tcp --dport 22960:22962 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.133 -p tcp --dport 36723:36728 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.133 -p udp --dport 39262:39267 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 134
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26303:26305 -j DNAT --to-destination 192.168.100.134
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22963:22965 -j DNAT --to-destination 192.168.100.134 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36729:36734 -j DNAT --to-destination 192.168.100.134 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39268:39273 -j DNAT --to-destination 192.168.100.134
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.134 -p tcp --dport 26303:26305 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.134 -p tcp --dport 22963:22965 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.134 -p tcp --dport 36729:36734 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.134 -p udp --dport 39268:39273 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26303:26305 -j DNAT --to-destination 192.168.100.134
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22963:22965 -j DNAT --to-destination 192.168.100.134 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36729:36734 -j DNAT --to-destination 192.168.100.134 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39268:39273 -j DNAT --to-destination 192.168.100.134
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.134 -p tcp --dport 26303:26305 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.134 -p tcp --dport 22963:22965 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.134 -p tcp --dport 36729:36734 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.134 -p udp --dport 39268:39273 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 135
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26306:26308 -j DNAT --to-destination 192.168.100.135
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22966:22968 -j DNAT --to-destination 192.168.100.135 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36735:36740 -j DNAT --to-destination 192.168.100.135 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39274:39279 -j DNAT --to-destination 192.168.100.135
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.135 -p tcp --dport 26306:26308 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.135 -p tcp --dport 22966:22968 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.135 -p tcp --dport 36735:36740 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.135 -p udp --dport 39274:39279 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26306:26308 -j DNAT --to-destination 192.168.100.135
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22966:22968 -j DNAT --to-destination 192.168.100.135 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36735:36740 -j DNAT --to-destination 192.168.100.135 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39274:39279 -j DNAT --to-destination 192.168.100.135
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.135 -p tcp --dport 26306:26308 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.135 -p tcp --dport 22966:22968 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.135 -p tcp --dport 36735:36740 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.135 -p udp --dport 39274:39279 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 136
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26309:26311 -j DNAT --to-destination 192.168.100.136
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22969:22971 -j DNAT --to-destination 192.168.100.136 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36741:36746 -j DNAT --to-destination 192.168.100.136 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39280:39285 -j DNAT --to-destination 192.168.100.136
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.136 -p tcp --dport 26309:26311 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.136 -p tcp --dport 22969:22971 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.136 -p tcp --dport 36741:36746 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.136 -p udp --dport 39280:39285 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26309:26311 -j DNAT --to-destination 192.168.100.136
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22969:22971 -j DNAT --to-destination 192.168.100.136 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36741:36746 -j DNAT --to-destination 192.168.100.136 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39280:39285 -j DNAT --to-destination 192.168.100.136
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.136 -p tcp --dport 26309:26311 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.136 -p tcp --dport 22969:22971 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.136 -p tcp --dport 36741:36746 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.136 -p udp --dport 39280:39285 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 137
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26312:26314 -j DNAT --to-destination 192.168.100.137
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22972:22974 -j DNAT --to-destination 192.168.100.137 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36747:36752 -j DNAT --to-destination 192.168.100.137 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39286:39291 -j DNAT --to-destination 192.168.100.137
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.137 -p tcp --dport 26312:26314 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.137 -p tcp --dport 22972:22974 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.137 -p tcp --dport 36747:36752 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.137 -p udp --dport 39286:39291 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26312:26314 -j DNAT --to-destination 192.168.100.137
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22972:22974 -j DNAT --to-destination 192.168.100.137 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36747:36752 -j DNAT --to-destination 192.168.100.137 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39286:39291 -j DNAT --to-destination 192.168.100.137
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.137 -p tcp --dport 26312:26314 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.137 -p tcp --dport 22972:22974 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.137 -p tcp --dport 36747:36752 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.137 -p udp --dport 39286:39291 -j SNAT --to-source 192.168.1.49
+
+
+#IPTABLES 138
+
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26315:26317 -j DNAT --to-destination 192.168.100.138
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22975:22977 -j DNAT --to-destination 192.168.100.138 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36753:36758 -j DNAT --to-destination 192.168.100.138 
+post-up iptables -t nat -A PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39292:39297 -j DNAT --to-destination 192.168.100.138
+
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.138 -p tcp --dport 26315:26317 -j SNAT --to-source 192.168.1.49
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.138 -p tcp --dport 22975:22977 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.138 -p tcp --dport 36753:36758 -j SNAT --to-source 192.168.1.49 
+post-up iptables -t nat -A POSTROUTING -i vmbr0  -d 192.168.100.138 -p udp --dport 39292:39297 -j SNAT --to-source 192.168.1.49
+
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 26315:26317 -j DNAT --to-destination 192.168.100.138
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 22975:22977 -j DNAT --to-destination 192.168.100.138 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p tcp --dport 36753:36758 -j DNAT --to-destination 192.168.100.138 
+post-down iptables -t nat -D PREROUTING -i vmbr0  -d 192.168.1.49 -p udp --dport 39292:39297 -j DNAT --to-destination 192.168.100.138
+
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.138 -p tcp --dport 26315:26317 -j SNAT --to-source 192.168.1.49
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.138 -p tcp --dport 22975:22977 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.138 -p tcp --dport 36753:36758 -j SNAT --to-source 192.168.1.49 
+post-down iptables -t nat -D POSTROUTING -i vmbr0  -d 192.168.100.138 -p udp --dport 39292:39297 -j SNAT --to-source 192.168.1.49
+
+
+
+
+source /etc/network/interfaces.d/*
