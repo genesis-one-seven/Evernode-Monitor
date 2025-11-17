@@ -2,8 +2,8 @@
 
 # Configurazioni
 DOMAIN="genesis-one-seven-1.online"
-API_KEY="pk1_8548d2d447a9e75e52a482e2c40a89df994502a7d67edcf195cb9d8ecefd8fdc"  # Sostituisci con la tua API key Porkbun
-SECRET_API_KEY="sk1_3cf87b657b5d4f961c5d3158a6db7ccf9cd433d0dd1d87dad187bb414f8287fe"  # Sostituisci con la tua secret API key Porkbun
+API_KEY="<PUT YOUR API KEY HERE>"  # Sostituisci con la tua API key Porkbun
+SECRET_API_KEY="<PUT YOUR SECRET API KEY HERE>"  # Sostituisci con la tua secret API key Porkbun
 CURRENT_DIR="/home/evernode/current-certs"
 BACKUP_BASE="/home/evernode"
 TODAY=$(date +%Y-%m-%d)
