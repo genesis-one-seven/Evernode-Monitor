@@ -9,6 +9,12 @@ fi
 
 COMMAND="$1"
 
+if [ "$COMMAND" = "applyssl" ]; then
+    COMMAND="sudo evernode applyssl ~/current-certs/privatekey.pem ~/current-certs/publickey.pem ~/current-certs/certificatechain.pem"
+    echo "$COMMAND"
+    exit 0    # solo se vuoi terminare lo script qui (probabilmente no)
+fi
+
 echo "Comando da eseguire in tutte le VM attive:"
 echo "    $COMMAND"
 echo

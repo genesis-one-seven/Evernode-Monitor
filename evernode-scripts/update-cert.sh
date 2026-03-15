@@ -75,6 +75,9 @@ if [ "$CHANGED" = true ]; then
 
     # Salva percorso backup in cert-files.txt
     echo "$NEW_DIR" > "${CURRENT_DIR}/cert-files.txt"
+
+    
+    
 else
     echo "Nessun cambiamento nei certificati."
 fi
@@ -89,5 +92,10 @@ done
 
 # Pulizia
 rm -rf "$TEMP_DIR"
+
+if [ "$CHANGED" = true ]; then
+    sudo evernode applyssl ~/current-certs/privatekey.pem ~/current-certs/publickey.pem ~/current-certs/certificatechain.pem
+    echo "Nuovi certificati applicati con successo."
+fi
 
 echo "Operazione completata."

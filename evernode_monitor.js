@@ -1,7 +1,7 @@
 const { XrplClient } = require('xrpl-client')
+const xahau = require("xahau");
 const lib = require('xrpl-accountlib');
 const { exit } = require('process');
-
 const fs = require('fs')
 const { createTransport } = require('nodemailer');
 
@@ -9,9 +9,13 @@ const { createTransport } = require('nodemailer');
 const path = require('path');
 const { ALPN_ENABLED } = require('constants');
 const { Console, log } = require('console');
+
+const DAYS_OLD = 7; 
+
 require('dotenv').config({ path: path.resolve(__dirname, '.env') })
 
 const verboseLog = process.env.verboseLog == "true";
+
 
 const consoleLog = (msg) => {
   console.log(new Date().toISOString() + " " + msg)
@@ -39,9 +43,11 @@ const evrDestinationAccountTag = process.env.evrDestinationAccountTag;
 
 const xahSourceAccount = process.env.xahSourceAccount;
 
+const run_xah_withdrawal = process.env.run_xah_withdrawal == "true";
 const run_evr_withdrawal = process.env.run_evr_withdrawal == "true";
 const run_xah_balance_monitor = process.env.run_xah_balance_monitor == "true";
 const run_heartbeat_monitor = process.env.run_heartbeat_monitor == "true";
+const clean_uri_tokens = process.env.clean_uri_tokens == "true";
 
 const xahaud = process.env.xahaud;
 const client = new XrplClient(xahaud);
@@ -217,7 +223,6 @@ async function GetEvrBalance(account) {
   var balance = 0
   while (typeof marker === 'string') {
     const lines = await client.send({ command: 'account_lines', account, marker: marker === '' ? undefined : marker })
-
     marker = lines?.marker === marker ? null : lines?.marker
     //consoleLog(`Got ${lines.lines.length} results`)
     lines.lines.forEach(t => {
@@ -233,6 +238,65 @@ async function GetEvrBalance(account) {
 }
 
 
+
+const transfer_funds_xah = async () => {
+  consoleLog("Starting the funds transfer batch...");
+
+  for (const account of accounts) {
+    logVerbose(account);
+    var accountNumber = getAccountNumber(account);
+    if (account != "") {
+      logVerbose("start the XAH transferring process on account " + accountNumber);
+      if (accountNumber != evrDestinationAccount) {
+        logVerbose("getting account data on account " + accountNumber);
+        const { account_data } = await client.send({ command: "account_info", account: accountNumber })
+        logVerbose(JSON.stringify(account_data));
+        let marker = ''
+        
+        var balance = account_data.Balance;
+        log("XAH Balance for account " + accountNumber + " = " + balance);
+        //check just the EVRs balance is > 0 if not go to start of for loop with continue
+        if (balance <=  xah_balance_threshold) {
+          logVerbose('# XAH Balance is below the minumum required to send the funds for account ' + accountNumber); continue;
+        }
+
+        //balance = balance - 10;
+
+        //Destination Adress and TAG set in.env file
+        const tag = process.env.tag;
+       
+        //send all funds to your chosen Exchange, Xaman or other Xahau account 
+        logVerbose("Balance = " + balance + ", preparing the payment transaction on account " + accountNumber);
+        const tx = {
+          TransactionType: 'Payment',
+          Account: accountNumber,
+          Amount: (balance - xah_balance_threshold).toString(),
+          //Destination: 'rYourWalletYouControl'
+          Destination: evrDestinationAccount, //your exchnage or xaman wallet address
+          DestinationTag: evrDestinationAccountTag, //*** set to YOUR exchange wallet TAG Note: no quotes << do not forget to set TAG
+          Fee: '12', //12 drops aka 0.000012 XAH, Note: Fee is XAH NOT EVR
+          NetworkID: '21337', //XAHAU Production ID
+          Sequence: account_data.Sequence
+        }
+        logVerbose("signing the transaction on account " + accountNumber);
+        
+        lib.derive.familySeed(getAccountSecret(account));
+        var keypair = lib.derive.familySeed(getAccountSecret(account))
+
+        
+        const { signedTransaction } = lib.sign(tx, keypair)
+        logVerbose(JSON.stringify(tx))
+
+        //SUBmit sign TX to ledger
+        consoleLog("sending the EVR payment transaction on account " + accountNumber);
+        const submit = await client.send({ command: 'submit', 'tx_blob': signedTransaction })
+        consoleLog("Payment sent, result = " + submit.engine_result);
+
+
+      } //end of for loop
+    }
+  }
+}
 
 const transfer_funds = async () => {
   consoleLog("Starting the funds transfer batch...");
@@ -311,20 +375,142 @@ const transfer_funds = async () => {
   }
 }
 
-const monitor_heartbeat = async () => {
-  consoleLog("Checking account heartbeat...");
-  var accountIndex = 1;
-  for (const account of accounts) {
-    logVerbose("checking account heartbeat on account " + account);
-    await checkAccountHeartBeat(getAccountNumber(account), accountIndex);
-    accountIndex++;
+async function getLedgerTime(ledgerIndex) {
+  try {
+    const ledger = await client.request({
+      command: 'ledger',
+      ledger_index: ledgerIndex,
+      // transactions: false
+    });
+    return ledger.result.ledger.close_time;
+  } catch (e) {
+    // fallback: stima basata su tempo medio chiusura ledger (~3.5s)
+    const genesis = 694370000; // circa 2022-01-01
+    return genesis + (ledgerIndex * 3.5);
   }
 }
 
-function getMinutesBetweenDates(startDate, endDate) {
-  const diff = endDate - startDate;
-  return (diff / 60000);
+async function getOldURITokens(account) {
+  let marker = undefined;
+  const oldTokens = [];
+
+  
+  var lastLedger= await getLatestValidatedLedger();
+
+  log(account);
+  do {
+    const response = await client.send({
+      command: 'account_objects',
+      account: getAccountNumber(account),
+      type: 'uri_token',
+      ledger_index: 'validated',
+      limit: 400,
+      marker: marker
+    });
+
+    //log(JSON.stringify(response));
+
+    const now = Math.floor(Date.now() / 1000);
+    const cutoff = now - (DAYS_OLD * 24 * 60 * 60);
+    for (const obj of response.account_objects) {
+      // URIToken ha il campo IssuedAt o usa il ledger del mint
+      const issuedLedger = obj.PreviousTxnLgrSeq;
+
+      log(JSON.stringify(obj));  
+      
+      log("uri = " + obj.index + " iSSUED LEDGER= " + issuedLedger);
+      
+
+      if (lastLedger - issuedLedger >  2000) {
+        log("old token = " + obj.index);
+        await burnToken(account, obj.index)
+        oldTokens.push({
+          URITokenID: obj.index,
+          URI: obj.URI ? Buffer.from(obj.URI, 'hex').toString('utf8') : null
+        });
+      }
+    }
+
+    marker = response.marker;
+  } while (marker);
+
+  return oldTokens;
 }
+
+
+async function burnToken(account, uriTokenID) {
+
+  const clientXah = new xahau.Client("wss://xahau.network");
+  await clientXah.connect();
+
+  const response = await clientXah.request({
+    command: "account_info",
+    account: getAccountNumber(account),
+    ledger_index: "validated",
+  });
+  logVerbose(response);
+
+  
+  const tx = {
+          TransactionType: 'URITokenBurn',
+          Account: getAccountNumber(account),
+          NetworkID: '21337', //XAHAU Production ID
+          URITokenID: uriTokenID
+        }
+        logVerbose("signing the transaction to burn uri token " + uriTokenID);
+        
+        lib.derive.familySeed(getAccountSecret(account));
+        var keypair = lib.derive.familySeed(getAccountSecret(account))
+
+        logVerbose("extracted the private key");
+      
+        
+        const { signedTransaction } = lib.sign(tx, keypair)
+        
+        logVerbose(JSON.stringify(tx))
+
+        //SUBmit sign TX to ledger
+        const submit = await clientXah.request({ command: 'submit', 'tx_blob': signedTransaction })
+
+        logVerbose(submit.engine_result + " " + submit.engine_result_message  + " " +  submit.tx_json.hash);
+}
+
+
+const clean_old_uri_tokens = async () => {
+  consoleLog("Starting the clean_old_uri_tokens batch...");
+
+  for (const account of reputationAccounts) {
+    logVerbose(account);
+    const tokens = await getOldURITokens(account);
+
+    for(const uri_token of tokens)
+    {
+       log(uri_token.URI);
+    }
+  }
+}
+
+async function getLatestValidatedLedger() {
+ 
+    
+    // Richiesta per l'ultimo ledger validato
+    const response = await client.send({
+      command: 'ledger',
+      ledger_index: 'validated'  // Recupera l'ultimo ledger chiuso
+    });
+
+    log(JSON.stringify(response));
+    // Stampa i dettagli principali del ledger
+    const ledger = response.ledger;
+    log(`- Indice: ${ledger.ledger_index}`);
+    
+    return ledger.ledger_index;
+
+    // Se vuoi dettagli completi (stato del ledger), stampa tutto
+    // console.log('Dettagli completi:', JSON.stringify(ledger, null, 2));
+  
+}
+
 
 function getAccountNumber(account)
 {
@@ -347,120 +533,6 @@ function getAccountSecret(account)
 }
 
 
-
-async function checkAccountHeartBeat(account, accountIndex) {
-  var ledgerIndex = -1;
-  const filePath = path.resolve(__dirname, account + '.txt');
-  var accountFailed = fs.existsSync(filePath);
-  var date_failure = new Date();
-  if (accountFailed) {
-    date_failure = new Date(Date.parse(fs.readFileSync(filePath, 'utf8')));
-    logVerbose("account " + account + " is in status failed since " + date_failure);
-    const diffMinutes = getMinutesBetweenDates(date_failure, new Date());
-    logVerbose("diffMinutes = " + diffMinutes);
-    logVerbose("alert_repeat_interval_in_minutes = " + alert_repeat_interval_in_minutes);
-    if (alert_repeat_interval_in_minutes > 0 && diffMinutes > alert_repeat_interval_in_minutes) {
-      accountFailed = false;
-    }
-  }
-
-  while (true) {
-    let marker = '';
-    const l = [];
-    while (typeof marker === 'string') {
-      logVerbose("getting last 5 transactions on account " + account + " with last ledger " + ledgerIndex);
-      const response = await client.send({
-        "id": 2,
-        "command": "account_tx",
-        "account": account,
-        "ledger_index_min": -1,
-        "ledger_index_max": ledgerIndex,
-        "binary": false,
-        "limit": 5,
-        "forward": false, marker: marker === '' ? undefined : marker
-      })
-      marker = response?.marker === marker ? null : response?.marker
-      // It gets the last 5 transactions and looks for the last heartbeat
-      var i = 0;
-      if (response.transactions != undefined) {
-        for (var tIndex = 0; tIndex < response.transactions.length; tIndex++) {
-          var transaction = response.transactions[tIndex];
-          ledgerIndex = transaction.tx.ledger_index - 1;
-          logVerbose(JSON.stringify(transaction.tx));
-          logVerbose(tIndex + " " + 2 + " new ledgerIndex = " + ledgerIndex);
-          var utcMilliseconds = 1000 * (transaction.tx.date + 946684800);
-          var transactionDate = new Date(0); // The 0 there is the key, which sets the date to the epoch
-          var date = new Date();
-          var now_utc = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(),
-            date.getUTCDate(), date.getUTCHours(),
-            date.getUTCMinutes(), date.getUTCSeconds());
-          if (now_utc - utcMilliseconds > 1000 * 60 * minutes_from_last_heartbeat_alert_threshold) {
-            consoleLog("Handling failure for too old heartbeat transaction, account failed = " + accountFailed);
-            await handleFailure(account, accountFailed, filePath, accountIndex);
-            return;
-          }
-          if (transaction.tx.Destination == heartbeatAccount) {
-            //consoleLog("System running regularly " + account + "");
-            if (fs.existsSync(filePath)) {
-              await sendSuccess(account, accountIndex);
-              fs.rmSync(filePath);
-            }
-            return;
-          }
-        }
-        if (response.transactions.length < 5) {
-          consoleLog("Handling failure for no heartbeat transactions, account failed = " + accountFailed);
-          await handleFailure(account, accountFailed, filePath);
-          return;
-        }
-      }
-    }
-  }
-}
-
-async function handleFailure(account, accountFailed, filePath, accountIndex) {
-  if (!accountFailed) {
-    await sendFailure(account, accountIndex);
-    fs.writeFileSync(filePath, new Date().toString())
-  }
-  consoleLog("ALERT, SYSTEM STOPPED " + account);
-}
-
-async function sendFailure(account, accountIndex) {
-  var subject = "Failure in Evernode heartbeat " + accountIndex.toString();
-  var text = "Failure in retrieving Evernode heartbeat for account " + account + " (" + accountIndex.toString() + ")";
-  await sendMail(subject, text);
-}
-
-async function sendSuccess(account, accountIndex) {
-  var subject = "Evernode heartbeat restored " + accountIndex.toString();
-  var text = "Evernode heartbeat restored in account " + account + " (" + accountIndex.toString() + ")";
-  await sendMail(subject, text);
-}
-
-async function sendMail(subject, text) {
-  var mailOptions = {
-    from: smtpEmail,
-    to: destinationEmail,
-    subject: subject,
-    text: text
-  };
-  consoleLog("SENDING MAIL " + JSON.stringify(mailOptions));
-
-  if (!smtpEmail) {
-    consoleLog("smtp email not set in .env file. Email is not sent");
-    return;
-  }
-
-  await transporter.sendMail(mailOptions, function (error, info) {
-    if (error) {
-      consoleLog(error);
-    } else {
-      consoleLog('Email sent: ' + info.response);
-    }
-  });
-}
-
 function validate() {
   if (!accounts || accounts.length == 0 || accounts[0] == "") {
     consoleLog("no accounts set in .env file.");
@@ -473,9 +545,11 @@ function validate() {
 const main = async () => {
   var valid = validate();
   if (valid) {
+    if (run_xah_withdrawal) { await transfer_funds_xah() };
     if (run_evr_withdrawal) { await transfer_funds() };
-    if (run_heartbeat_monitor) await monitor_heartbeat();
     if (run_xah_balance_monitor) await monitor_balance();
+    if (clean_uri_tokens) await clean_old_uri_tokens();
+    
   }
   client.close();
   consoleLog('Shutting down...');
