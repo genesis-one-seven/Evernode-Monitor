@@ -1,0 +1,120 @@
+#!/bin/bash
+
+# === CONFIGURAZIONE ===
+VMID=102
+VM_NAME="evernode-2"
+ISO="local:iso/ubuntu-24.04.iso"
+DOMAIN="andromeda-2.genesis-one-seven-1.online"  # <-- CAMBIA CON IL TUO DOMINIO
+SCRIPT_SRC="./update-cert.sh"
+SCRIPT_DEST="/home/evernode/update-cert.sh"
+
+# Controllo root
+if [[ $EUID -ne 0 ]]; then
+   echo "Questo script deve essere eseguito come root"
+   exit 1
+fi
+
+# Controllo file script
+if [[ ! -f "$SCRIPT_SRC" ]]; then
+    echo "Errore: $SCRIPT_SRC non trovato nella directory corrente!"
+    exit 1
+fi
+
+# Crea la VM
+echo "Creazione VM $VMID ($VM_NAME)..."
+qm create $VMID \
+  --name $VM_NAME \
+  --memory 8192 \
+  --cores 4 \
+  --net0 virtio,bridge=vmbr1 \
+  --boot order=scsi0 \
+  --scsi0 local-lvm:32 \
+  --scsihw virtio-scsi-pci \
+  --ide2 $ISO,media=cdrom \
+  --serial0 socket --vga serial0 \
+  --agent enabled=1
+
+# Configura Cloud-Init per utente, password, hostname, IP statico
+echo "Configurazione Cloud-Init..."
+qm set $VMID \
+  --ipconfig0 ip=192.168.100.102/24,gw=192.168.100.1 \
+  --ciuser evernode \
+  --cipassword evernode \
+  --sshkeys /var/lib/pve-cluster/config/sshkeys.pub \
+  --hostname $VM_NAME
+
+# Avvia installazione automatica con Cloud-Init + script post-install
+cat > /var/lib/vz/snippets/cloudinit-evernode.yml << EOF
+#cloud-config
+autoinstall:
+  version: 1
+  identity:
+    hostname: $VM_NAME
+    username: evernode
+    password: "\$6\$rounds=4096\$$(openssl passwd -6 evernode)"
+  ssh:
+    install-server: yes
+  packages:
+    - openssh-server
+    - qemu-guest-agent
+  package_update: true
+  package_upgrade: true
+  late-commands:
+    - curtin in-target --target=/target -- swap --size=4294967296
+    - curtin in-target --target=/target -- bash -c "echo '127.0.0.1 $DOMAIN' >> /etc/hosts"
+    - curtin in-target --target=/target -- systemctl enable ssh
+    - curtin in-target --target=/target -- systemctl enable qemu-guest-agent
+users:
+  - name: evernode
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    lock_passwd: false
+    plain_text_passwd: evernode
+EOF
+
+qm set $VMID --cicustom "user=local:snippets/cloudinit-evernode.yml"
+
+# Avvia la VM
+echo "Avvio VM e installazione automatica in corso..."
+qm start $VMID
+
+# Attende che la VM sia raggiungibile via SSH
+echo "Attendo che la VM sia online (SSH su 192.168.100.102)..."
+timeout=300
+elapsed=0
+while ! qm agent $VMID ping &>/dev/null && [ $elapsed -lt $timeout ]; do
+    sleep 5
+    elapsed=$((elapsed + 5))
+done
+
+if [ $elapsed -ge $timeout ]; then
+    echo "Timeout: VM non raggiungibile dopo $timeout secondi"
+    exit 1
+fi
+
+echo "VM online! Attendo completamento Cloud-Init..."
+
+# Attende che Cloud-Init termini
+sleep 30
+qm agent $VMID exec -- bash -c "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do sleep 2; done"
+
+echo "Cloud-Init completato."
+
+# Copia script update-cert.sh
+echo "Copia di $SCRIPT_SRC nella VM..."
+qm guest exec $VMID -- mkdir -p /home/evernode
+qm guest exec $VMID -- bash -c "cat > $SCRIPT_DEST" < "$SCRIPT_SRC"
+qm guest exec $VMID -- chmod +x $SCRIPT_DEST
+qm guest exec $VMID -- chown evernode:evernode $SCRIPT_DEST
+
+# Crea cron job
+echo "Creazione cron job giornaliero a mezzanotte..."
+qm guest exec $VMID -- bash -c "echo '0 0 * * * /home/evernode/update-cert.sh >> /var/log/update-cert.log 2>&1' | crontab -u evernode -"
+
+echo "VM $VM_NAME creata con successo!"
+echo "IP: 192.168.100.102"
+echo "Utente: evernode / evernode"
+echo "SSH: attivo"
+echo "Swap: 4GB"
+echo "Cron: update-cert.sh ogni giorno a mezzanotte"
+echo "Hosts: 127.0.0.1 $DOMAIN"

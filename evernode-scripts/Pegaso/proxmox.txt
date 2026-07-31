@@ -1,0 +1,12 @@
+HTTP/2 200 
+date: Sun, 23 Nov 2025 13:19:28 GMT
+content-type: application/vnd.docker.distribution.manifest.v2+json
+content-length: 527
+docker-content-digest: sha256:c2d41d2ba6d8b7b4a3ffec621578eb4d9a0909df29dfa2f6fd8a2e5fd0836aed
+docker-distribution-api-version: registry/2.0
+etag: "sha256:c2d41d2ba6d8b7b4a3ffec621578eb4d9a0909df29dfa2f6fd8a2e5fd0836aed"
+strict-transport-security: max-age=31536000
+ratelimit-limit: 100;w=21600
+ratelimit-remaining: 7;w=21600
+docker-ratelimit-source: 93.44.255.41
+

@@ -1,0 +1,12 @@
+{
+    "dependencies": {
+        "@ledgerhq/hw-app-xrp": "^6.34.0",
+        "@ledgerhq/hw-transport-node-hid": "^6.31.0",
+        "dotenv": "^16.4.1",
+        "nodemailer": "^6.9.12",
+        "xahau": "^4.0.3",
+        "xrpl": "^4.6.0",
+        "xrpl-accountlib": "^3.2.9",
+        "xrpl-client": "^2.3.1"
+    }
+}
